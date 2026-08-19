@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: naratika-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: RUST_LOG
+        value: "info"
