@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Naratika</string>
+    <string name="title_activity_main">Naratika</string>
+    <string name="package_name">com.naratika.app</string>
+    <string name="custom_url_scheme">com.naratika.app</string>
+</resources>
