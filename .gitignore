@@ -1,0 +1,9 @@
+client/node_modules/
+client/dist/
+server/target/
+.env
+.env.*
+*.db
+*.sqlite
+*.sqlite3
+*.log
