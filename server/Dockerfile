@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Cargo files first for dependency caching
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
 
 # Dummy main for layer caching
 RUN mkdir src && echo "fn main() {}" > src/main.rs
