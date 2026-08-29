@@ -1,8 +1,8 @@
+use chrono::Utc;
 use rusqlite::{params, Connection, Result};
+use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use chrono::Utc;
-use sha2::{Sha256, Digest};
 
 pub type DbPool = Arc<Mutex<Connection>>;
 
@@ -15,7 +15,8 @@ pub fn hash_password(password: &str) -> String {
 pub fn init_db(db_path: &str) -> Result<DbPool> {
     let mut conn = Connection::open(db_path)?;
 
-    conn.execute_batch(r#"
+    conn.execute_batch(
+        r#"
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous = NORMAL;
         PRAGMA foreign_keys = ON;
@@ -108,7 +109,8 @@ pub fn init_db(db_path: &str) -> Result<DbPool> {
             estimated_income_cents INTEGER NOT NULL DEFAULT 0,
             date TEXT NOT NULL
         );
-    "#)?;
+    "#,
+    )?;
 
     seed_initial_data(&mut conn)?;
 
@@ -148,7 +150,7 @@ fn seed_initial_data(conn: &mut Connection) -> Result<()> {
     if user_count == 0 {
         let now = Utc::now().to_rfc3339();
         let pass_hash = hash_password("admin123");
-        
+
         conn.execute(
             "INSERT INTO users (id, username, email, password_hash, display_name, role, coins, free_unlock_tokens, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
@@ -205,7 +207,12 @@ fn seed_initial_data(conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
-fn seed_sample_novels(conn: &mut Connection, author1: &str, author2: &str, now: &str) -> Result<()> {
+fn seed_sample_novels(
+    conn: &mut Connection,
+    author1: &str,
+    author2: &str,
+    now: &str,
+) -> Result<()> {
     struct SeedNovel<'a> {
         id: &'a str,
         title: &'a str,
@@ -450,7 +457,7 @@ Sementara itu, musuh bebuyutan keluarga Dirgantara mulai bergerak dalam bayang-b
             let ch_id = format!("{}-ch-{}", n.id, idx + 1);
             let words = ch.1.split_whitespace().count() as i64;
             let is_vip_int = if ch.2 { 1 } else { 0 };
-            
+
             conn.execute(
                 "INSERT INTO chapters (id, novel_id, chapter_number, title, content, word_count, is_vip, created_at, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",

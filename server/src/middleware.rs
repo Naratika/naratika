@@ -1,3 +1,4 @@
+use crate::models::{ApiResponse, UserClaims};
 use axum::{
     async_trait,
     extract::FromRequestParts,
@@ -6,9 +7,8 @@ use axum::{
     Json,
 };
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use std::time::{SystemTime, UNIX_EPOCH};
-use crate::models::{ApiResponse, UserClaims};
 use std::sync::OnceLock;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 static JWT_SECRET_CELL: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -28,8 +28,15 @@ fn jwt_secret() -> &'static [u8] {
         .as_slice()
 }
 
-pub fn create_jwt(user_id: &str, username: &str, role: &str) -> Result<String, jsonwebtoken::errors::Error> {
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+pub fn create_jwt(
+    user_id: &str,
+    username: &str,
+    role: &str,
+) -> Result<String, jsonwebtoken::errors::Error> {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
     let exp = now + 60 * 60 * 24 * 30; // 30 days expiration
 
     let claims = UserClaims {
@@ -39,12 +46,17 @@ pub fn create_jwt(user_id: &str, username: &str, role: &str) -> Result<String, j
         exp: exp as usize,
     };
 
-    encode(&Header::default(), &claims, &EncodingKey::from_secret(jwt_secret()))
+    encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(jwt_secret()),
+    )
 }
 
 pub fn verify_jwt(token: &str) -> Result<UserClaims, jsonwebtoken::errors::Error> {
     let validation = Validation::default();
-    let token_data = decode::<UserClaims>(token, &DecodingKey::from_secret(jwt_secret()), &validation)?;
+    let token_data =
+        decode::<UserClaims>(token, &DecodingKey::from_secret(jwt_secret()), &validation)?;
     Ok(token_data.claims)
 }
 
@@ -74,7 +86,9 @@ where
 
         let resp = (
             StatusCode::UNAUTHORIZED,
-            Json(ApiResponse::<()>::err("Unauthorized: Token tidak valid atau telah kedaluwarsa")),
+            Json(ApiResponse::<()>::err(
+                "Unauthorized: Token tidak valid atau telah kedaluwarsa",
+            )),
         )
             .into_response();
         Err(resp)

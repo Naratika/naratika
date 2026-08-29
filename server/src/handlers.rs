@@ -4,10 +4,10 @@ use axum::{
     response::IntoResponse,
     Json,
 };
+use chrono::Utc;
 use rusqlite::params;
 use std::collections::HashMap;
 use uuid::Uuid;
-use chrono::Utc;
 
 use crate::db::{hash_password, DbPool};
 use crate::middleware::{create_jwt, AuthUser, MaybeAuthUser};
@@ -23,12 +23,16 @@ pub async fn register(
     if role != "reader" && role != "author" {
         return (
             StatusCode::BAD_REQUEST,
-            Json(ApiResponse::<AuthResponse>::err("Role harus reader atau author")),
+            Json(ApiResponse::<AuthResponse>::err(
+                "Role harus reader atau author",
+            )),
         );
     }
 
     let user_id = format!("user-{}", Uuid::new_v4());
-    let display_name = payload.display_name.unwrap_or_else(|| payload.username.clone());
+    let display_name = payload
+        .display_name
+        .unwrap_or_else(|| payload.username.clone());
     let pass_hash = hash_password(&payload.password);
     let now = Utc::now().to_rfc3339();
 
@@ -55,7 +59,9 @@ pub async fn register(
                 Err(_) => {
                     return (
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ApiResponse::<AuthResponse>::err("Gagal membuat token session")),
+                        Json(ApiResponse::<AuthResponse>::err(
+                            "Gagal membuat token session",
+                        )),
                     )
                 }
             };
@@ -146,15 +152,14 @@ pub async fn login(
         }
         Err(_) => (
             StatusCode::UNAUTHORIZED,
-            Json(ApiResponse::<AuthResponse>::err("Username/Email atau Password salah")),
+            Json(ApiResponse::<AuthResponse>::err(
+                "Username/Email atau Password salah",
+            )),
         ),
     }
 }
 
-pub async fn get_me(
-    State(pool): State<DbPool>,
-    auth: AuthUser,
-) -> impl IntoResponse {
+pub async fn get_me(State(pool): State<DbPool>, auth: AuthUser) -> impl IntoResponse {
     let conn = pool.lock().await;
 
     let mut stmt = match conn.prepare(
@@ -227,8 +232,15 @@ pub async fn get_novels(
 
     if let Some(q) = search {
         if !q.is_empty() {
-            let placeholder = if !bind_category.is_empty() { "?2" } else { "?1" };
-            query.push_str(&format!(" AND (n.title LIKE {p} OR n.author_name LIKE {p} OR n.synopsis LIKE {p})", p=placeholder));
+            let placeholder = if !bind_category.is_empty() {
+                "?2"
+            } else {
+                "?1"
+            };
+            query.push_str(&format!(
+                " AND (n.title LIKE {p} OR n.author_name LIKE {p} OR n.synopsis LIKE {p})",
+                p = placeholder
+            ));
             bind_search = format!("%{}%", q);
         }
     }
@@ -245,7 +257,10 @@ pub async fn get_novels(
         Err(e) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<NovelListResponse>::err(&format!("Query error: {}", e))),
+                Json(ApiResponse::<NovelListResponse>::err(&format!(
+                    "Query error: {}",
+                    e
+                ))),
             )
         }
     };
@@ -277,24 +292,46 @@ pub async fn get_novels(
     };
 
     let novels: Vec<Novel> = if !bind_category.is_empty() && !bind_search.is_empty() {
-        stmt.query_map(params![bind_category, bind_search], parse_row).unwrap().filter_map(|r| r.ok()).collect()
+        stmt.query_map(params![bind_category, bind_search], parse_row)
+            .unwrap()
+            .filter_map(|r| r.ok())
+            .collect()
     } else if !bind_category.is_empty() {
-        stmt.query_map(params![bind_category], parse_row).unwrap().filter_map(|r| r.ok()).collect()
+        stmt.query_map(params![bind_category], parse_row)
+            .unwrap()
+            .filter_map(|r| r.ok())
+            .collect()
     } else if !bind_search.is_empty() {
-        stmt.query_map(params![bind_search], parse_row).unwrap().filter_map(|r| r.ok()).collect()
+        stmt.query_map(params![bind_search], parse_row)
+            .unwrap()
+            .filter_map(|r| r.ok())
+            .collect()
     } else {
-        stmt.query_map([], parse_row).unwrap().filter_map(|r| r.ok()).collect()
+        stmt.query_map([], parse_row)
+            .unwrap()
+            .filter_map(|r| r.ok())
+            .collect()
     };
 
-    let mut cat_stmt = conn.prepare("SELECT DISTINCT category FROM novels").unwrap();
-    let categories: Vec<String> = cat_stmt.query_map([], |row| row.get(0)).unwrap().filter_map(|r| r.ok()).collect();
+    let mut cat_stmt = conn
+        .prepare("SELECT DISTINCT category FROM novels")
+        .unwrap();
+    let categories: Vec<String> = cat_stmt
+        .query_map([], |row| row.get(0))
+        .unwrap()
+        .filter_map(|r| r.ok())
+        .collect();
 
     let mut feat_stmt = conn.prepare(
         "SELECT n.id, n.title, n.slug, n.author_id, n.author_name, n.category, n.tags, n.synopsis, n.cover_url, n.status, n.views, n.rating, n.total_ratings, n.is_featured, n.created_at, n.updated_at,
          (SELECT COUNT(*) FROM chapters c WHERE c.novel_id = n.id) as total_chapters
          FROM novels n WHERE n.is_featured = 1 ORDER BY n.views DESC LIMIT 5"
     ).unwrap();
-    let featured: Vec<Novel> = feat_stmt.query_map([], parse_row).unwrap().filter_map(|r| r.ok()).collect();
+    let featured: Vec<Novel> = feat_stmt
+        .query_map([], parse_row)
+        .unwrap()
+        .filter_map(|r| r.ok())
+        .collect();
 
     (
         StatusCode::OK,
@@ -369,7 +406,9 @@ pub async fn get_novel_detail(
         Err(_) => {
             return (
                 StatusCode::NOT_FOUND,
-                Json(ApiResponse::<NovelDetailResponse>::err("Novel tidak ditemukan")),
+                Json(ApiResponse::<NovelDetailResponse>::err(
+                    "Novel tidak ditemukan",
+                )),
             )
         }
     };
@@ -379,31 +418,37 @@ pub async fn get_novel_detail(
     let mut is_bookmarked = false;
     let mut last_read_chapter_id = None;
     if let Some(uid) = current_user_id {
-        let mut b_stmt = conn.prepare("SELECT last_chapter_id FROM bookmarks WHERE user_id = ?1 AND novel_id = ?2").unwrap();
+        let mut b_stmt = conn
+            .prepare("SELECT last_chapter_id FROM bookmarks WHERE user_id = ?1 AND novel_id = ?2")
+            .unwrap();
         if let Ok(last_ch) = b_stmt.query_row(params![uid, novel_id], |row| row.get(0)) {
             is_bookmarked = true;
             last_read_chapter_id = last_ch;
         }
     }
 
-    let mut ch_stmt = conn.prepare(
-        "SELECT id, novel_id, chapter_number, title, word_count, is_vip, created_at
-         FROM chapters WHERE novel_id = ?1 ORDER BY chapter_number ASC"
-    ).unwrap();
+    let mut ch_stmt = conn
+        .prepare(
+            "SELECT id, novel_id, chapter_number, title, word_count, is_vip, created_at
+         FROM chapters WHERE novel_id = ?1 ORDER BY chapter_number ASC",
+        )
+        .unwrap();
 
     let mut chapters = Vec::new();
-    let rows = ch_stmt.query_map(params![novel_id], |row| {
-        let is_vip_int: i64 = row.get(5)?;
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, String>(1)?,
-            row.get::<_, i64>(2)?,
-            row.get::<_, String>(3)?,
-            row.get::<_, i64>(4)?,
-            is_vip_int == 1,
-            row.get::<_, String>(6)?,
-        ))
-    }).unwrap();
+    let rows = ch_stmt
+        .query_map(params![novel_id], |row| {
+            let is_vip_int: i64 = row.get(5)?;
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, i64>(4)?,
+                is_vip_int == 1,
+                row.get::<_, String>(6)?,
+            ))
+        })
+        .unwrap();
 
     for r in rows.flatten() {
         let (ch_id, n_id, ch_num, ch_title, word_count, is_vip, created_at) = r;
@@ -411,11 +456,15 @@ pub async fn get_novel_detail(
 
         if is_vip {
             if let Some(uid) = current_user_id {
-                if novel.author_id == uid || maybe_auth.0.as_ref().map(|u| u.role.as_str()) == Some("admin") {
+                if novel.author_id == uid
+                    || maybe_auth.0.as_ref().map(|u| u.role.as_str()) == Some("admin")
+                {
                     is_unlocked = true;
                 } else {
                     let mut unl_stmt = conn.prepare("SELECT COUNT(*) FROM unlocked_chapters WHERE user_id = ?1 AND chapter_id = ?2").unwrap();
-                    let count: i64 = unl_stmt.query_row(params![uid, ch_id], |row| row.get(0)).unwrap_or(0);
+                    let count: i64 = unl_stmt
+                        .query_row(params![uid, ch_id], |row| row.get(0))
+                        .unwrap_or(0);
                     if count > 0 {
                         is_unlocked = true;
                     }
@@ -453,16 +502,26 @@ pub async fn create_novel(
 ) -> impl IntoResponse {
     let conn = pool.lock().await;
 
-    let mut u_stmt = conn.prepare("SELECT display_name FROM users WHERE id = ?1").unwrap();
+    let mut u_stmt = conn
+        .prepare("SELECT display_name FROM users WHERE id = ?1")
+        .unwrap();
     let author_name: String = match u_stmt.query_row(params![auth.0.sub], |row| row.get(0)) {
         Ok(name) => name,
         Err(_) => auth.0.username.clone(),
     };
 
     let novel_id = format!("novel-{}", Uuid::new_v4());
-    let slug = payload.title.to_lowercase().replace(' ', "-").chars().filter(|c| c.is_alphanumeric() || *c == '-').collect::<String>();
+    let slug = payload
+        .title
+        .to_lowercase()
+        .replace(' ', "-")
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '-')
+        .collect::<String>();
     let tags_json = serde_json::to_string(&payload.tags).unwrap_or_else(|_| "[]".to_string());
-    let default_cover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80".to_string();
+    let default_cover =
+        "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80"
+            .to_string();
     let cover_url = payload.cover_url.unwrap_or(default_cover);
     let status = payload.status.unwrap_or_else(|| "ongoing".to_string());
     let now = Utc::now().to_rfc3339();
@@ -508,12 +567,18 @@ pub async fn create_novel(
             };
             (
                 StatusCode::CREATED,
-                Json(ApiResponse::ok_msg(created_novel, "Novel berhasil diterbitkan")),
+                Json(ApiResponse::ok_msg(
+                    created_novel,
+                    "Novel berhasil diterbitkan",
+                )),
             )
         }
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<Novel>::err(&format!("Gagal membuat novel: {}", e))),
+            Json(ApiResponse::<Novel>::err(&format!(
+                "Gagal membuat novel: {}",
+                e
+            ))),
         ),
     }
 }
@@ -539,30 +604,50 @@ pub async fn get_chapter_content(
 ) -> impl IntoResponse {
     let conn = pool.lock().await;
 
-    let mut n_stmt = conn.prepare("SELECT title, author_id FROM novels WHERE id = ?1").unwrap();
-    let (novel_title, author_id) = match n_stmt.query_row(params![novel_id], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))) {
+    let mut n_stmt = conn
+        .prepare("SELECT title, author_id FROM novels WHERE id = ?1")
+        .unwrap();
+    let (novel_title, author_id) = match n_stmt.query_row(params![novel_id], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    }) {
         Ok(t) => t,
         Err(_) => {
             return (
                 StatusCode::NOT_FOUND,
-                Json(ApiResponse::<ChapterContentResponse>::err("Novel tidak ditemukan")),
+                Json(ApiResponse::<ChapterContentResponse>::err(
+                    "Novel tidak ditemukan",
+                )),
             )
         }
     };
 
     let mut all_ch_stmt = conn.prepare("SELECT id, chapter_number FROM chapters WHERE novel_id = ?1 ORDER BY chapter_number ASC").unwrap();
-    let all_chapters: Vec<(String, i64)> = all_ch_stmt.query_map(params![novel_id], |row| Ok((row.get(0)?, row.get(1)?))).unwrap().filter_map(|r| r.ok()).collect();
+    let all_chapters: Vec<(String, i64)> = all_ch_stmt
+        .query_map(params![novel_id], |row| Ok((row.get(0)?, row.get(1)?)))
+        .unwrap()
+        .filter_map(|r| r.ok())
+        .collect();
 
     let current_idx = all_chapters.iter().position(|(id, _)| id == &chapter_id);
     if current_idx.is_none() {
         return (
             StatusCode::NOT_FOUND,
-            Json(ApiResponse::<ChapterContentResponse>::err("Bab tidak ditemukan")),
+            Json(ApiResponse::<ChapterContentResponse>::err(
+                "Bab tidak ditemukan",
+            )),
         );
     }
     let idx = current_idx.unwrap();
-    let prev_chapter_id = if idx > 0 { Some(all_chapters[idx - 1].0.clone()) } else { None };
-    let next_chapter_id = if idx + 1 < all_chapters.len() { Some(all_chapters[idx + 1].0.clone()) } else { None };
+    let prev_chapter_id = if idx > 0 {
+        Some(all_chapters[idx - 1].0.clone())
+    } else {
+        None
+    };
+    let next_chapter_id = if idx + 1 < all_chapters.len() {
+        Some(all_chapters[idx + 1].0.clone())
+    } else {
+        None
+    };
     let total_chapters = all_chapters.len() as i64;
 
     let mut ch_stmt = conn.prepare(
@@ -588,7 +673,9 @@ pub async fn get_chapter_content(
         Err(_) => {
             return (
                 StatusCode::NOT_FOUND,
-                Json(ApiResponse::<ChapterContentResponse>::err("Bab tidak ditemukan")),
+                Json(ApiResponse::<ChapterContentResponse>::err(
+                    "Bab tidak ditemukan",
+                )),
             )
         }
     };
@@ -599,8 +686,12 @@ pub async fn get_chapter_content(
 
     let current_user = maybe_auth.0.as_ref();
     if let Some(u) = current_user {
-        let mut u_stmt = conn.prepare("SELECT free_unlock_tokens, coins FROM users WHERE id = ?1").unwrap();
-        if let Ok((t, c)) = u_stmt.query_row(params![u.sub], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?))) {
+        let mut u_stmt = conn
+            .prepare("SELECT free_unlock_tokens, coins FROM users WHERE id = ?1")
+            .unwrap();
+        if let Ok((t, c)) = u_stmt.query_row(params![u.sub], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?))
+        }) {
             user_tokens = t;
             user_coins = c;
         }
@@ -613,7 +704,9 @@ pub async fn get_chapter_content(
                 has_access = true;
             } else {
                 let mut unl_stmt = conn.prepare("SELECT COUNT(*) FROM unlocked_chapters WHERE user_id = ?1 AND chapter_id = ?2").unwrap();
-                let count: i64 = unl_stmt.query_row(params![u.sub, chapter_id], |row| row.get(0)).unwrap_or(0);
+                let count: i64 = unl_stmt
+                    .query_row(params![u.sub, chapter_id], |row| row.get(0))
+                    .unwrap_or(0);
                 if count > 0 {
                     has_access = true;
                 }
@@ -652,7 +745,9 @@ pub async fn create_chapter(
 ) -> impl IntoResponse {
     let conn = pool.lock().await;
 
-    let mut n_stmt = conn.prepare("SELECT author_id FROM novels WHERE id = ?1").unwrap();
+    let mut n_stmt = conn
+        .prepare("SELECT author_id FROM novels WHERE id = ?1")
+        .unwrap();
     let author_id: String = match n_stmt.query_row(params![novel_id], |row| row.get(0)) {
         Ok(id) => id,
         Err(_) => {
@@ -666,21 +761,33 @@ pub async fn create_chapter(
     if author_id != auth.0.sub && auth.0.role != "admin" {
         return (
             StatusCode::FORBIDDEN,
-            Json(ApiResponse::<Chapter>::err("Hanya penulis novel ini yang dapat menambahkan bab")),
+            Json(ApiResponse::<Chapter>::err(
+                "Hanya penulis novel ini yang dapat menambahkan bab",
+            )),
         );
     }
 
     let chapter_number = match payload.chapter_number {
         Some(n) => n,
         None => {
-            let mut count_stmt = conn.prepare("SELECT IFNULL(MAX(chapter_number), 0) + 1 FROM chapters WHERE novel_id = ?1").unwrap();
-            count_stmt.query_row(params![novel_id], |row| row.get(0)).unwrap_or(1)
+            let mut count_stmt = conn
+                .prepare(
+                    "SELECT IFNULL(MAX(chapter_number), 0) + 1 FROM chapters WHERE novel_id = ?1",
+                )
+                .unwrap();
+            count_stmt
+                .query_row(params![novel_id], |row| row.get(0))
+                .unwrap_or(1)
         }
     };
 
     let chapter_id = format!("{}-ch-{}", novel_id, chapter_number);
     let word_count = payload.content.split_whitespace().count() as i64;
-    let is_vip_int = if payload.is_vip.unwrap_or(false) { 1 } else { 0 };
+    let is_vip_int = if payload.is_vip.unwrap_or(false) {
+        1
+    } else {
+        0
+    };
     let now = Utc::now().to_rfc3339();
 
     let res = conn.execute(
@@ -700,7 +807,10 @@ pub async fn create_chapter(
 
     match res {
         Ok(_) => {
-            let _ = conn.execute("UPDATE novels SET updated_at = ?1 WHERE id = ?2", params![now, novel_id]);
+            let _ = conn.execute(
+                "UPDATE novels SET updated_at = ?1 WHERE id = ?2",
+                params![now, novel_id],
+            );
 
             let ch = Chapter {
                 id: chapter_id,
@@ -720,7 +830,10 @@ pub async fn create_chapter(
         }
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<Chapter>::err(&format!("Gagal menambahkan bab: {}", e))),
+            Json(ApiResponse::<Chapter>::err(&format!(
+                "Gagal menambahkan bab: {}",
+                e
+            ))),
         ),
     }
 }
@@ -735,33 +848,46 @@ pub async fn unlock_chapter(
 
     let method = payload.get("method").map(|s| s.as_str()).unwrap_or("token");
 
-    let mut u_stmt = conn.prepare("SELECT free_unlock_tokens, coins FROM users WHERE id = ?1").unwrap();
-    let (tokens, coins): (i64, i64) = match u_stmt.query_row(params![auth.0.sub], |row| Ok((row.get(0)?, row.get(1)?))) {
-        Ok(vals) => vals,
-        Err(_) => {
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(ApiResponse::<()>::err("User tidak valid")),
-            )
-        }
-    };
+    let mut u_stmt = conn
+        .prepare("SELECT free_unlock_tokens, coins FROM users WHERE id = ?1")
+        .unwrap();
+    let (tokens, coins): (i64, i64) =
+        match u_stmt.query_row(params![auth.0.sub], |row| Ok((row.get(0)?, row.get(1)?))) {
+            Ok(vals) => vals,
+            Err(_) => {
+                return (
+                    StatusCode::UNAUTHORIZED,
+                    Json(ApiResponse::<()>::err("User tidak valid")),
+                )
+            }
+        };
 
     if method == "token" {
         if tokens < 1 {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<()>::err("Token gratis Anda habis. Tonton video iklan untuk mendapatkan token gratis!")),
+                Json(ApiResponse::<()>::err(
+                    "Token gratis Anda habis. Tonton video iklan untuk mendapatkan token gratis!",
+                )),
             );
         }
-        let _ = conn.execute("UPDATE users SET free_unlock_tokens = free_unlock_tokens - 1 WHERE id = ?1", params![auth.0.sub]);
+        let _ = conn.execute(
+            "UPDATE users SET free_unlock_tokens = free_unlock_tokens - 1 WHERE id = ?1",
+            params![auth.0.sub],
+        );
     } else {
         if coins < 10 {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<()>::err("Koin Anda tidak cukup (butuh 10 koin).")),
+                Json(ApiResponse::<()>::err(
+                    "Koin Anda tidak cukup (butuh 10 koin).",
+                )),
             );
         }
-        let _ = conn.execute("UPDATE users SET coins = coins - 10 WHERE id = ?1", params![auth.0.sub]);
+        let _ = conn.execute(
+            "UPDATE users SET coins = coins - 10 WHERE id = ?1",
+            params![auth.0.sub],
+        );
     }
 
     let unl_id = format!("unl-{}", Uuid::new_v4());
@@ -778,10 +904,7 @@ pub async fn unlock_chapter(
     )
 }
 
-pub async fn get_user_library(
-    State(pool): State<DbPool>,
-    auth: AuthUser,
-) -> impl IntoResponse {
+pub async fn get_user_library(State(pool): State<DbPool>, auth: AuthUser) -> impl IntoResponse {
     let conn = pool.lock().await;
 
     let mut stmt = conn.prepare(
@@ -793,21 +916,25 @@ pub async fn get_user_library(
          ORDER BY b.last_read_at DESC"
     ).unwrap();
 
-    let bookmarks: Vec<Bookmark> = stmt.query_map(params![auth.0.sub], |row| {
-        Ok(Bookmark {
-            id: row.get(0)?,
-            user_id: row.get(1)?,
-            novel_id: row.get(2)?,
-            novel_title: row.get(3)?,
-            novel_cover: row.get(4)?,
-            novel_category: row.get(5)?,
-            last_chapter_id: row.get(6)?,
-            last_chapter_number: row.get(7)?,
-            last_read_at: row.get(8)?,
-            scroll_percent: row.get(9)?,
-            total_chapters: row.get(10)?,
+    let bookmarks: Vec<Bookmark> = stmt
+        .query_map(params![auth.0.sub], |row| {
+            Ok(Bookmark {
+                id: row.get(0)?,
+                user_id: row.get(1)?,
+                novel_id: row.get(2)?,
+                novel_title: row.get(3)?,
+                novel_cover: row.get(4)?,
+                novel_category: row.get(5)?,
+                last_chapter_id: row.get(6)?,
+                last_chapter_number: row.get(7)?,
+                last_read_at: row.get(8)?,
+                scroll_percent: row.get(9)?,
+                total_chapters: row.get(10)?,
+            })
         })
-    }).unwrap().filter_map(|r| r.ok()).collect();
+        .unwrap()
+        .filter_map(|r| r.ok())
+        .collect();
 
     (StatusCode::OK, Json(ApiResponse::ok(bookmarks)))
 }
@@ -819,8 +946,11 @@ pub async fn toggle_bookmark(
 ) -> impl IntoResponse {
     let conn = pool.lock().await;
 
-    let mut check_stmt = conn.prepare("SELECT id FROM bookmarks WHERE user_id = ?1 AND novel_id = ?2").unwrap();
-    let existing: Result<String, _> = check_stmt.query_row(params![auth.0.sub, payload.novel_id], |row| row.get(0));
+    let mut check_stmt = conn
+        .prepare("SELECT id FROM bookmarks WHERE user_id = ?1 AND novel_id = ?2")
+        .unwrap();
+    let existing: Result<String, _> =
+        check_stmt.query_row(params![auth.0.sub, payload.novel_id], |row| row.get(0));
 
     if let Ok(b_id) = existing {
         let _ = conn.execute("DELETE FROM bookmarks WHERE id = ?1", params![b_id]);
@@ -831,9 +961,15 @@ pub async fn toggle_bookmark(
     } else {
         let b_id = format!("bm-{}", Uuid::new_v4());
         let now = Utc::now().to_rfc3339();
-        
-        let mut ch_stmt = conn.prepare("SELECT id FROM chapters WHERE novel_id = ?1 ORDER BY chapter_number ASC LIMIT 1").unwrap();
-        let first_ch: Option<String> = ch_stmt.query_row(params![payload.novel_id], |row| row.get(0)).ok();
+
+        let mut ch_stmt = conn
+            .prepare(
+                "SELECT id FROM chapters WHERE novel_id = ?1 ORDER BY chapter_number ASC LIMIT 1",
+            )
+            .unwrap();
+        let first_ch: Option<String> = ch_stmt
+            .query_row(params![payload.novel_id], |row| row.get(0))
+            .ok();
 
         let _ = conn.execute(
             "INSERT INTO bookmarks (id, user_id, novel_id, last_chapter_id, last_chapter_number, last_read_at, scroll_percent)
@@ -879,20 +1015,22 @@ pub async fn get_ad_config(State(pool): State<DbPool>) -> impl IntoResponse {
          FROM ad_configs LIMIT 1"
     ).unwrap();
 
-    let config = stmt.query_row([], |row| {
-        let ads_enabled_int: i64 = row.get(7)?;
-        Ok(AdConfig {
-            id: row.get(0)?,
-            admob_app_id: row.get(1)?,
-            banner_ad_id: row.get(2)?,
-            interstitial_ad_id: row.get(3)?,
-            rewarded_ad_id: row.get(4)?,
-            interstitial_frequency: row.get(5)?,
-            reward_tokens_per_ad: row.get(6)?,
-            ads_enabled: ads_enabled_int == 1,
-            updated_at: row.get(8)?,
+    let config = stmt
+        .query_row([], |row| {
+            let ads_enabled_int: i64 = row.get(7)?;
+            Ok(AdConfig {
+                id: row.get(0)?,
+                admob_app_id: row.get(1)?,
+                banner_ad_id: row.get(2)?,
+                interstitial_ad_id: row.get(3)?,
+                rewarded_ad_id: row.get(4)?,
+                interstitial_frequency: row.get(5)?,
+                reward_tokens_per_ad: row.get(6)?,
+                ads_enabled: ads_enabled_int == 1,
+                updated_at: row.get(8)?,
+            })
         })
-    }).unwrap();
+        .unwrap();
 
     (StatusCode::OK, Json(ApiResponse::ok(config)))
 }
@@ -905,7 +1043,9 @@ pub async fn update_ad_config(
     if auth.0.role != "admin" {
         return (
             StatusCode::FORBIDDEN,
-            Json(ApiResponse::<AdConfig>::err("Hanya Admin yang dapat mengubah konfigurasi AdMob")),
+            Json(ApiResponse::<AdConfig>::err(
+                "Hanya Admin yang dapat mengubah konfigurasi AdMob",
+            )),
         );
     }
 
@@ -917,17 +1057,19 @@ pub async fn update_ad_config(
          FROM ad_configs LIMIT 1"
     ).unwrap();
 
-    let existing = stmt.query_row([], |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, String>(1)?,
-            row.get::<_, String>(2)?,
-            row.get::<_, String>(3)?,
-            row.get::<_, i64>(4)?,
-            row.get::<_, i64>(5)?,
-            row.get::<_, i64>(6)?,
-        ))
-    }).unwrap();
+    let existing = stmt
+        .query_row([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, i64>(4)?,
+                row.get::<_, i64>(5)?,
+                row.get::<_, i64>(6)?,
+            ))
+        })
+        .unwrap();
 
     let app_id = payload.admob_app_id.unwrap_or(existing.0);
     let banner_id = payload.banner_ad_id.unwrap_or(existing.1);
@@ -935,7 +1077,15 @@ pub async fn update_ad_config(
     let reward_id = payload.rewarded_ad_id.unwrap_or(existing.3);
     let freq = payload.interstitial_frequency.unwrap_or(existing.4);
     let tokens = payload.reward_tokens_per_ad.unwrap_or(existing.5);
-    let enabled = if let Some(e) = payload.ads_enabled { if e { 1 } else { 0 } } else { existing.6 };
+    let enabled = if let Some(e) = payload.ads_enabled {
+        if e {
+            1
+        } else {
+            0
+        }
+    } else {
+        existing.6
+    };
 
     let _ = conn.execute(
         "UPDATE ad_configs SET
@@ -965,7 +1115,10 @@ pub async fn update_ad_config(
 
     (
         StatusCode::OK,
-        Json(ApiResponse::ok_msg(updated, "Pengaturan AdMob berhasil diperbarui")),
+        Json(ApiResponse::ok_msg(
+            updated,
+            "Pengaturan AdMob berhasil diperbarui",
+        )),
     )
 }
 
@@ -975,7 +1128,9 @@ pub async fn claim_rewarded_ad_token(
 ) -> impl IntoResponse {
     let conn = pool.lock().await;
 
-    let mut ad_stmt = conn.prepare("SELECT reward_tokens_per_ad FROM ad_configs LIMIT 1").unwrap();
+    let mut ad_stmt = conn
+        .prepare("SELECT reward_tokens_per_ad FROM ad_configs LIMIT 1")
+        .unwrap();
     let tokens_per_ad: i64 = ad_stmt.query_row([], |row| row.get(0)).unwrap_or(1);
 
     let _ = conn.execute(
@@ -983,22 +1138,26 @@ pub async fn claim_rewarded_ad_token(
         params![tokens_per_ad, auth.0.sub],
     );
 
-    let mut u_stmt = conn.prepare("SELECT free_unlock_tokens FROM users WHERE id = ?1").unwrap();
-    let new_tokens: i64 = u_stmt.query_row(params![auth.0.sub], |row| row.get(0)).unwrap_or(0);
+    let mut u_stmt = conn
+        .prepare("SELECT free_unlock_tokens FROM users WHERE id = ?1")
+        .unwrap();
+    let new_tokens: i64 = u_stmt
+        .query_row(params![auth.0.sub], |row| row.get(0))
+        .unwrap_or(0);
 
     (
         StatusCode::OK,
         Json(ApiResponse::ok_msg(
             new_tokens,
-            &format!("Selamat! Anda mendapatkan +{} Token Pembuka Bab Gratis", tokens_per_ad),
+            &format!(
+                "Selamat! Anda mendapatkan +{} Token Pembuka Bab Gratis",
+                tokens_per_ad
+            ),
         )),
     )
 }
 
-pub async fn get_author_dashboard(
-    State(pool): State<DbPool>,
-    auth: AuthUser,
-) -> impl IntoResponse {
+pub async fn get_author_dashboard(State(pool): State<DbPool>, auth: AuthUser) -> impl IntoResponse {
     let conn = pool.lock().await;
 
     let mut stmt = conn.prepare(
@@ -1034,7 +1193,11 @@ pub async fn get_author_dashboard(
         })
     };
 
-    let novels: Vec<Novel> = stmt.query_map(params![auth.0.sub], parse_novel).unwrap().filter_map(|r| r.ok()).collect();
+    let novels: Vec<Novel> = stmt
+        .query_map(params![auth.0.sub], parse_novel)
+        .unwrap()
+        .filter_map(|r| r.ok())
+        .collect();
 
     let total_novels = novels.len() as i64;
     let total_chapters: i64 = novels.iter().map(|n| n.total_chapters).sum();
@@ -1053,44 +1216,61 @@ pub async fn get_author_dashboard(
     )
 }
 
-pub async fn get_admin_dashboard(
-    State(pool): State<DbPool>,
-    auth: AuthUser,
-) -> impl IntoResponse {
+pub async fn get_admin_dashboard(State(pool): State<DbPool>, auth: AuthUser) -> impl IntoResponse {
     if auth.0.role != "admin" {
         return (
             StatusCode::FORBIDDEN,
-            Json(ApiResponse::<AdminDashboardStats>::err("Hanya Admin yang dapat mengakses")),
+            Json(ApiResponse::<AdminDashboardStats>::err(
+                "Hanya Admin yang dapat mengakses",
+            )),
         );
     }
 
     let conn = pool.lock().await;
 
-    let total_users: i64 = conn.query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0)).unwrap_or(0);
-    let total_authors: i64 = conn.query_row("SELECT COUNT(*) FROM users WHERE role = 'author'", [], |row| row.get(0)).unwrap_or(0);
-    let total_novels: i64 = conn.query_row("SELECT COUNT(*) FROM novels", [], |row| row.get(0)).unwrap_or(0);
-    let total_chapters: i64 = conn.query_row("SELECT COUNT(*) FROM chapters", [], |row| row.get(0)).unwrap_or(0);
-    let total_reads: i64 = conn.query_row("SELECT IFNULL(SUM(views), 0) FROM novels", [], |row| row.get(0)).unwrap_or(0);
+    let total_users: i64 = conn
+        .query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))
+        .unwrap_or(0);
+    let total_authors: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM users WHERE role = 'author'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    let total_novels: i64 = conn
+        .query_row("SELECT COUNT(*) FROM novels", [], |row| row.get(0))
+        .unwrap_or(0);
+    let total_chapters: i64 = conn
+        .query_row("SELECT COUNT(*) FROM chapters", [], |row| row.get(0))
+        .unwrap_or(0);
+    let total_reads: i64 = conn
+        .query_row("SELECT IFNULL(SUM(views), 0) FROM novels", [], |row| {
+            row.get(0)
+        })
+        .unwrap_or(0);
 
     let mut ad_stmt = conn.prepare(
         "SELECT id, admob_app_id, banner_ad_id, interstitial_ad_id, rewarded_ad_id, interstitial_frequency, reward_tokens_per_ad, ads_enabled, updated_at
          FROM ad_configs LIMIT 1"
     ).unwrap();
 
-    let ad_config = ad_stmt.query_row([], |row| {
-        let ads_enabled_int: i64 = row.get(7)?;
-        Ok(AdConfig {
-            id: row.get(0)?,
-            admob_app_id: row.get(1)?,
-            banner_ad_id: row.get(2)?,
-            interstitial_ad_id: row.get(3)?,
-            rewarded_ad_id: row.get(4)?,
-            interstitial_frequency: row.get(5)?,
-            reward_tokens_per_ad: row.get(6)?,
-            ads_enabled: ads_enabled_int == 1,
-            updated_at: row.get(8)?,
+    let ad_config = ad_stmt
+        .query_row([], |row| {
+            let ads_enabled_int: i64 = row.get(7)?;
+            Ok(AdConfig {
+                id: row.get(0)?,
+                admob_app_id: row.get(1)?,
+                banner_ad_id: row.get(2)?,
+                interstitial_ad_id: row.get(3)?,
+                rewarded_ad_id: row.get(4)?,
+                interstitial_frequency: row.get(5)?,
+                reward_tokens_per_ad: row.get(6)?,
+                ads_enabled: ads_enabled_int == 1,
+                updated_at: row.get(8)?,
+            })
         })
-    }).unwrap();
+        .unwrap();
 
     (
         StatusCode::OK,
@@ -1113,7 +1293,9 @@ pub async fn toggle_novel_featured(
     if auth.0.role != "admin" {
         return (
             StatusCode::FORBIDDEN,
-            Json(ApiResponse::<bool>::err("Hanya Admin yang dapat mengubah status unggulan")),
+            Json(ApiResponse::<bool>::err(
+                "Hanya Admin yang dapat mengubah status unggulan",
+            )),
         );
     }
 
@@ -1123,11 +1305,18 @@ pub async fn toggle_novel_featured(
         params![novel_id],
     );
 
-    let mut stmt = conn.prepare("SELECT is_featured FROM novels WHERE id = ?1").unwrap();
-    let is_feat: i64 = stmt.query_row(params![novel_id], |row| row.get(0)).unwrap_or(0);
+    let mut stmt = conn
+        .prepare("SELECT is_featured FROM novels WHERE id = ?1")
+        .unwrap();
+    let is_feat: i64 = stmt
+        .query_row(params![novel_id], |row| row.get(0))
+        .unwrap_or(0);
 
     (
         StatusCode::OK,
-        Json(ApiResponse::ok_msg(is_feat == 1, "Status unggulan novel berhasil diubah")),
+        Json(ApiResponse::ok_msg(
+            is_feat == 1,
+            "Status unggulan novel berhasil diubah",
+        )),
     )
 }

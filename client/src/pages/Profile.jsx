@@ -145,6 +145,19 @@ export function Profile({ onNavigate }) {
           </div>
 
           <div className="bg-white rounded-3xl p-3 border border-gray-100 shadow-sm divide-y divide-gray-100 text-xs font-semibold">
+            {user.role === 'admin' && (
+              <button
+                onClick={() => onNavigate('admin')}
+                className="w-full py-3 px-3 flex items-center justify-between text-orange-700 hover:bg-orange-50 rounded-2xl transition"
+              >
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-orange-500" />
+                  <span>Panel Admin & Pengaturan AdMob</span>
+                </div>
+                <span className="text-gray-400">›</span>
+              </button>
+            )}
+
             <button
               onClick={() => onNavigate('privacy-policy')}
               className="w-full py-3 px-3 flex items-center justify-between text-gray-700 hover:text-orange-600"

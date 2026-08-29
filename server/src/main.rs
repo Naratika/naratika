@@ -1,5 +1,5 @@
 use axum::{
-        response::Html,
+    response::Html,
     routing::{get, post, put},
     Router,
 };
@@ -16,13 +16,16 @@ mod models;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "novel_server=debug,tower_http=debug".into()))
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "novel_server=debug,tower_http=debug".into()),
+        )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
     // Support DATABASE_PATH env var for persistent volume on Fly.io
-    let db_path = std::env::var("DATABASE_PATH")
-        .unwrap_or_else(|_| "novel_database.sqlite".to_string());
+    let db_path =
+        std::env::var("DATABASE_PATH").unwrap_or_else(|_| "novel_database.sqlite".to_string());
     let pool = db::init_db(&db_path)?;
     tracing::info!("SQLite Database connected & initialized: {}", db_path);
 
@@ -34,12 +37,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/auth/login", post(handlers::login))
         .route("/auth/me", get(handlers::get_me))
         // Novels
-        .route("/novels", get(handlers::get_novels).post(handlers::create_novel))
+        .route(
+            "/novels",
+            get(handlers::get_novels).post(handlers::create_novel),
+        )
         .route("/novels/:id", get(handlers::get_novel_detail))
         // Chapters
-        .route("/novels/:novel_id/chapters/:chapter_id", get(handlers::get_chapter_content))
+        .route(
+            "/novels/:novel_id/chapters/:chapter_id",
+            get(handlers::get_chapter_content),
+        )
         .route("/novels/:novel_id/chapters", post(handlers::create_chapter))
-        .route("/chapters/:chapter_id/unlock", post(handlers::unlock_chapter))
+        .route(
+            "/chapters/:chapter_id/unlock",
+            post(handlers::unlock_chapter),
+        )
         // Library
         .route("/library", get(handlers::get_user_library))
         .route("/library/bookmark", post(handlers::toggle_bookmark))
@@ -51,7 +63,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Dashboards
         .route("/author/dashboard", get(handlers::get_author_dashboard))
         .route("/admin/dashboard", get(handlers::get_admin_dashboard))
-        .route("/admin/novels/:id/feature", put(handlers::toggle_novel_featured))
+        .route(
+            "/admin/novels/:id/feature",
+            put(handlers::toggle_novel_featured),
+        )
         .with_state(pool);
 
     let app = Router::new()
@@ -77,7 +92,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn privacy_policy_page() -> Html<&'static str> {
-    Html(r#"<!DOCTYPE html>
+    Html(
+        r#"<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -110,11 +126,13 @@ async fn privacy_policy_page() -> Html<&'static str> {
     <h2>4. Kontak Kami</h2>
     <p>Jika Anda memiliki pertanyaan seputar Kebijakan Privasi ini, hubungi tim kami di: <strong>support@naratika.com</strong></p>
 </body>
-</html>"#)
+</html>"#,
+    )
 }
 
 async fn terms_of_service_page() -> Html<&'static str> {
-    Html(r#"<!DOCTYPE html>
+    Html(
+        r#"<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -129,5 +147,6 @@ async fn terms_of_service_page() -> Html<&'static str> {
     <h1>Syarat & Ketentuan Layanan (Terms of Service)</h1>
     <p>Dengan menggunakan aplikasi Naratika Hub, Anda menyetujui hak cipta konten, etika kepenulisan karya original, dan ketentuan monetisasi platform.</p>
 </body>
-</html>"#)
+</html>"#,
+    )
 }
