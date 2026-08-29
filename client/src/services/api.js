@@ -1,4 +1,8 @@
-const API_BASE = '/api';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD
+    ? 'https://naratika-api.onrender.com/api'
+    : '/api');
 
 export function getAuthToken() {
   return localStorage.getItem('novel_auth_token');
