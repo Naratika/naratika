@@ -54,11 +54,13 @@ jobs:
       - name: Decode keystore from secret
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.jks
 
+      - name: Decode keystore from secret
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.jks
       - name: Build signed release APK
         working-directory: client/android
         run: ./gradlew assembleRelease --no-daemon
         env:
-          KEYSTORE_PATH: app/release.jks
+          KEYSTORE_PATH: ${{ github.workspace }}/client/android/app/release.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
