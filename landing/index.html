@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naratika — Unduh Aplikasi</title>
+<meta name="description" content="Unduh Naratika, aplikasi baca &amp; terbit novel. Instalasi langsung tanpa Play Store.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c140e;
+    --ink-soft:#251b13;
+    --ink-line:#3a2c1f;
+    --parchment:#f3e7d3;
+    --parchment-dim:#b9a88e;
+    --brass:#c89b4a;
+    --brass-bright:#e0b968;
+    --ribbon:#8a2c2c;
+    --ribbon-dark:#661f1f;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--ink);
+    color:var(--parchment);
+    font-family:'Source Serif 4', Georgia, serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(200,155,74,0.07), transparent 45%),
+      radial-gradient(circle at 85% 60%, rgba(138,44,44,0.10), transparent 50%);
+    pointer-events:none;
+    z-index:0;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px; position:relative; z-index:1;}
+  a{color:inherit;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--brass);
+  }
+  h1,h2,h3{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    color:var(--parchment);
+  }
+  header{
+    padding:28px 0;
+    border-bottom:1px solid var(--ink-line);
+  }
+  .nav{display:flex; align-items:center; justify-content:space-between;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{
+    width:30px; height:30px;
+    border:1.5px solid var(--brass);
+    border-radius:5px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif; font-weight:700; font-size:15px;
+    color:var(--brass-bright);
+  }
+  .brand-name{font-family:'Fraunces', serif; font-weight:600; font-size:19px; letter-spacing:0.01em;}
+  .nav-link{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--parchment-dim);
+    text-decoration:none;
+    letter-spacing:0.04em;
+  }
+  .nav-link:hover{color:var(--brass-bright);}
+  .hero{
+    padding:76px 0 90px;
+    display:grid;
+    grid-template-columns:1.05fr 0.95fr;
+    gap:56px;
+    align-items:center;
+  }
+  .hero h1{
+    font-size:clamp(34px, 4.6vw, 54px);
+    line-height:1.06;
+    margin:18px 0 22px;
+  }
+  .hero h1 em{font-style:italic; color:var(--brass-bright);}
+  .hero p.lede{
+    font-size:17px;
+    color:var(--parchment-dim);
+    max-width:44ch;
+    margin-bottom:34px;
+  }
+  .cta-row{display:flex; align-items:flex-start; gap:22px; flex-wrap:wrap;}
+  .ribbon-btn{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    background:var(--ribbon);
+    color:var(--parchment);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px;
+    letter-spacing:0.05em;
+    text-decoration:none;
+    padding:16px 26px 20px;
+    border-radius:3px 3px 8px 8px;
+    box-shadow:0 10px 24px -8px rgba(0,0,0,0.6);
+    transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  }
+  .ribbon-btn::after{
+    content:"";
+    position:absolute;
+    left:14px; bottom:-9px;
+    width:0; height:0;
+    border-left:9px solid transparent;
+    border-right:9px solid transparent;
+    border-top:9px solid var(--ribbon-dark);
+  }
+  .ribbon-btn:hover{
+    transform:translateY(-2px);
+    background:#9c3232;
+    box-shadow:0 14px 28px -8px rgba(0,0,0,0.7);
+  }
+  .ribbon-btn svg{width:16px; height:16px; flex-shrink:0;}
+  .meta-stack{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--parchment-dim);
+    line-height:1.9;
+    padding-top:4px;
+  }
+  .meta-stack b{color:var(--parchment); font-weight:500;}
+  .page-frame{position:relative; display:flex; justify-content:center;}
+  .phone{
+    width:240px;
+    background:var(--ink-soft);
+    border:1px solid var(--ink-line);
+    border-radius:26px;
+    padding:14px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.7);
+    position:relative;
+  }
+  .phone-ribbon{
+    position:absolute;
+    top:-16px; right:26px;
+    width:26px; height:56px;
+    background:var(--brass);
+    clip-path:polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+    box-shadow:0 6px 14px -4px rgba(0,0,0,0.5);
+  }
+  .phone-screen{
+    background:#efe3cd;
+    border-radius:16px;
+    padding:20px 16px;
+    color:#2a1f17;
+    min-height:380px;
+  }
+  .ps-app{font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.08em; color:#8a2c2c; margin-bottom:14px; text-transform:uppercase;}
+  .ps-title{font-family:'Fraunces', serif; font-weight:600; font-size:19px; margin-bottom:10px; line-height:1.2;}
+  .ps-line{height:8px; background:#d8c9a8; border-radius:2px; margin-bottom:8px;}
+  .ps-line.short{width:60%;}
+  .ps-line.mid{width:80%;}
+  .ps-themes{display:flex; gap:8px; margin:20px 0 16px;}
+  .ps-dot{width:16px; height:16px; border-radius:50%; border:1.5px solid rgba(42,31,23,0.25);}
+  .ps-progress{height:4px; background:#d8c9a8; border-radius:2px; margin-top:22px; overflow:hidden;}
+  .ps-progress span{display:block; width:38%; height:100%; background:#8a2c2c;}
+  .section{padding:64px 0;}
+  .section-head{max-width:60ch; margin-bottom:40px;}
+  .section-head .eyebrow{margin-bottom:10px; display:block;}
+  .section-head h2{font-size:clamp(24px,3vw,32px);}
+  .steps{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:1px;
+    background:var(--ink-line);
+    border:1px solid var(--ink-line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .step{background:var(--ink-soft); padding:26px 22px 28px;}
+  .step-num{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:32px;
+    color:var(--brass);
+    display:block;
+    margin-bottom:14px;
+  }
+  .step h3{font-size:16px; margin-bottom:8px;}
+  .step p{font-size:13.5px; color:var(--parchment-dim);}
+  .warn-strip{
+    margin-top:22px;
+    border-left:3px solid var(--brass);
+    background:rgba(200,155,74,0.06);
+    padding:16px 20px;
+    font-size:14px;
+    color:var(--parchment-dim);
+    border-radius:0 6px 6px 0;
+  }
+  .warn-strip b{color:var(--brass-bright); font-weight:500;}
+  .toc{border-top:1px solid var(--ink-line);}
+  .toc-row{
+    display:grid;
+    grid-template-columns:110px 1fr auto;
+    gap:24px;
+    align-items:baseline;
+    padding:22px 0;
+    border-bottom:1px solid var(--ink-line);
+  }
+  .toc-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--brass);
+    letter-spacing:0.06em;
+  }
+  .toc-row h3{font-size:18px; font-weight:500; margin-bottom:4px;}
+  .toc-row p{font-size:13.5px; color:var(--parchment-dim); max-width:56ch;}
+  .toc-dots{display:none;}
+  .changelog{border:1px solid var(--ink-line); border-radius:var(--radius); overflow:hidden;}
+  .cl-row{
+    display:grid;
+    grid-template-columns:110px 130px 1fr;
+    gap:18px;
+    padding:16px 22px;
+    font-size:13.5px;
+    border-bottom:1px solid var(--ink-line);
+  }
+  .cl-row:last-child{border-bottom:none;}
+  .cl-row.head{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--parchment-dim);
+    background:var(--ink-soft);
+  }
+  .cl-version{font-family:'IBM Plex Mono', monospace; color:var(--brass-bright);}
+  .cl-date{color:var(--parchment-dim);}
+  footer{border-top:1px solid var(--ink-line); padding:40px 0 50px;}
+  .foot-grid{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px;}
+  .foot-links{display:flex; gap:22px; flex-wrap:wrap;}
+  .foot-links a{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--parchment-dim);
+    text-decoration:none;
+  }
+  .foot-links a:hover{color:var(--brass-bright);}
+  .foot-note{font-size:12.5px; color:var(--parchment-dim); max-width:52ch; margin-top:18px;}
+  @media (max-width: 860px){
+    .hero{grid-template-columns:1fr; padding-top:48px;}
+    .page-frame{order:-1; margin-bottom:8px;}
+    .phone{width:200px;}
+    .steps{grid-template-columns:1fr 1fr;}
+    .toc-row{grid-template-columns:70px 1fr;}
+    .cl-row{grid-template-columns:80px 100px 1fr; font-size:12.5px;}
+  }
+  @media (max-width: 520px){.steps{grid-template-columns:1fr;}}
+  [data-reveal]{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease;}
+  [data-reveal].is-visible{opacity:1; transform:translateY(0);}
+  @media (prefers-reduced-motion: reduce){[data-reveal]{opacity:1; transform:none; transition:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="nav">
+      <div class="brand">
+        <div class="brand-mark">N</div>
+        <div class="brand-name">Naratika</div>
+      </div>
+      <a class="nav-link" href="#unduh">UNDUH →</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <span class="eyebrow">Baca &amp; Terbit Novel</span>
+      <h1>Setiap bab tersimpan,<br>tepat di tempat<br>Anda <em>berhenti.</em></h1>
+      <p class="lede">Naratika — aplikasi baca dan terbit novel dengan tema baca, bookmark otomatis, dan panggung untuk penulis. Dipasang langsung dari file APK, tanpa Play Store.</p>
+
+      <div class="cta-row">
+        <a class="ribbon-btn" id="download-link" href="https://github.com/Naratika/naratika/releases/download/v1.0.0/Naratika-v1.0.0.apk" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          Unduh APK — v1.0.0
+        </a>
+        <div class="meta-stack">
+          <div><b>Ukuran</b> · 6.06 MB</div>
+          <div><b>Android</b> · 8.0 ke atas</div>
+          <div><b>Diperbarui</b> · 29 Agustus 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-frame">
+      <div class="phone">
+        <div class="phone-ribbon"></div>
+        <div class="phone-screen">
+          <div class="ps-app">Sedang Membaca</div>
+          <div class="ps-title">Pewaris Kultivasi<br>Bab 42</div>
+          <div class="ps-line mid"></div>
+          <div class="ps-line"></div>
+          <div class="ps-line short"></div>
+          <div class="ps-line mid"></div>
+          <div class="ps-line"></div>
+          <div class="ps-themes">
+            <div class="ps-dot" style="background:#efe3cd;"></div>
+            <div class="ps-dot" style="background:#f2d9ad;"></div>
+            <div class="ps-dot" style="background:#cfe0c8;"></div>
+            <div class="ps-dot" style="background:#2a1f17; border-color:#2a1f17;"></div>
+          </div>
+          <div class="ps-progress"><span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="unduh" data-reveal>
+    <div class="section-head">
+      <span class="eyebrow">Cara Pasang</span>
+      <h2>Empat langkah, di luar Play Store</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="step-num">01</span><h3>Unduh berkas</h3><p>Ketuk tombol pita merah di atas. Berkas .apk akan tersimpan di folder Unduhan ponsel Anda.</p></div>
+      <div class="step"><span class="step-num">02</span><h3>Izinkan sumber ini</h3><p>Saat diminta, aktifkan “Izinkan dari sumber ini” — Android menampilkan ini untuk semua aplikasi di luar Play Store.</p></div>
+      <div class="step"><span class="step-num">03</span><h3>Pasang</h3><p>Buka berkas .apk dari Unduhan, ketuk Pasang, dan tunggu beberapa detik.</p></div>
+      <div class="step"><span class="step-num">04</span><h3>Buka &amp; masuk</h3><p>Buat akun baru, atau gunakan akun yang sudah Anda daftarkan sebelumnya.</p></div>
+    </div>
+    <div class="warn-strip"><b>Kenapa ada peringatan “aplikasi tidak dikenal”?</b> Ini normal untuk semua APK yang dipasang di luar Play Store, bukan tanda aplikasi bermasalah. Peringatan hilang setelah Anda mengizinkan sumbernya sekali di langkah 02.</div>
+  </section>
+
+  <section class="section" data-reveal>
+    <div class="section-head"><span class="eyebrow">Daftar Isi</span><h2>Apa yang ada di dalam</h2></div>
+    <div class="toc">
+      <div class="toc-row"><span class="toc-num">Bab 01</span><div><h3>Lima Tema Baca</h3><p>Putih, sepia, hijau mata, gelap, dan AMOLED — atur ukuran huruf, jenis huruf, dan spasi baris sesuai kenyamanan Anda.</p></div></div>
+      <div class="toc-row"><span class="toc-num">Bab 02</span><div><h3>Bookmark Otomatis</h3><p>Progres bacaan tersimpan sendiri di setiap bab, sehingga Anda bisa lanjut membaca tepat di tempat berhenti.</p></div></div>
+      <div class="toc-row"><span class="toc-num">Bab 03</span><div><h3>Panggung Penulis</h3><p>Terbitkan novel, kelola bab gratis maupun VIP, dan pantau statistik pembaca dari satu dashboard.</p></div></div>
+      <div class="toc-row"><span class="toc-num">Bab 04</span><div><h3>Bab VIP via Video Berhadiah</h3><p>Buka bab terkunci secara gratis dengan menonton video singkat — tanpa perlu membayar.</p></div></div>
+    </div>
+  </section>
+
+  <section class="section" data-reveal>
+    <div class="section-head"><span class="eyebrow">Riwayat Rilis</span><h2>Versi yang sudah diterbitkan</h2></div>
+    <div class="changelog">
+      <div class="cl-row head"><div>Versi</div><div>Tanggal</div><div>Catatan</div></div>
+      <div class="cl-row"><div class="cl-version">v1.0.0</div><div class="cl-date">29 Agustus 2026</div><div>Rilis pertama: pembaca 5 tema, bookmark otomatis, panggung penulis, panel admin.</div></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot-grid">
+      <div>
+        <div class="brand" style="margin-bottom:10px;"><div class="brand-mark" style="width:24px;height:24px;font-size:12px;">N</div><div class="brand-name" style="font-size:16px;">Naratika</div></div>
+        <p class="foot-note">Dipasang langsung dari berkas APK. Selalu pasang berkas yang Anda unduh dari halaman resmi ini saja.</p>
+      </div>
+      <div class="foot-links">
+        <a href="https://naratika-api.onrender.com/privacy-policy" target="_blank" rel="noopener">Kebijakan Privasi</a>
+        <a href="https://naratika-api.onrender.com/terms-of-service" target="_blank" rel="noopener">Syarat &amp; Ketentuan</a>
+        <a href="mailto:support@naratika.com">Hubungi Kami</a>
+        <a href="#unduh">Unduh</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  const items = document.querySelectorAll('[data-reveal]');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        e.target.classList.add('is-visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  items.forEach(el => io.observe(el));
+</script>
+</body>
+</html>
