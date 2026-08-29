@@ -37,17 +37,6 @@ export function Profile({ onNavigate }) {
     }
   };
 
-  const handleQuickLogin = async (demoUsername, demoPass) => {
-    try {
-      setLoading(true);
-      await login(demoUsername, demoPass);
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleWatchAdBonus = () => {
     triggerRewardedAd(() => {
       alert('🎉 Selamat! Anda telah mendapatkan bonus 1 Token VIP gratis setelah menonton video iklan!');
@@ -116,32 +105,6 @@ export function Profile({ onNavigate }) {
             >
               Tonton Iklan
             </button>
-          </div>
-
-          <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm">
-            <h4 className="font-bold text-xs text-gray-700 uppercase tracking-wider mb-2.5">
-              Beralih Akun Demo Cepat
-            </h4>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => handleQuickLogin('admin', 'admin123')}
-                className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-orange-50 hover:text-orange-700 text-xs font-bold text-gray-700 transition"
-              >
-                👑 Admin
-              </button>
-              <button
-                onClick={() => handleQuickLogin('penulis_hebat', 'author123')}
-                className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-orange-50 hover:text-orange-700 text-xs font-bold text-gray-700 transition"
-              >
-                ✍️ Penulis
-              </button>
-              <button
-                onClick={() => handleQuickLogin('nona_romansa', 'author123')}
-                className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-orange-50 hover:text-orange-700 text-xs font-bold text-gray-700 transition"
-              >
-                📖 Penulis 2
-              </button>
-            </div>
           </div>
 
           <div className="bg-white rounded-3xl p-3 border border-gray-100 shadow-sm divide-y divide-gray-100 text-xs font-semibold">
@@ -302,35 +265,6 @@ export function Profile({ onNavigate }) {
             >
               {isLoginMode ? 'Belum punya akun? Daftar di sini' : 'Sudah punya akun? Masuk di sini'}
             </button>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <span className="text-[11px] font-bold text-gray-400 block text-center uppercase tracking-wider mb-2">
-              Atau Masuk Cepat Sebagai:
-            </span>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin', 'admin123')}
-                className="py-2 bg-gray-100 hover:bg-orange-100 text-xs font-bold text-gray-700 rounded-xl transition"
-              >
-                👑 Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('penulis_hebat', 'author123')}
-                className="py-2 bg-gray-100 hover:bg-orange-100 text-xs font-bold text-gray-700 rounded-xl transition"
-              >
-                ✍️ Penulis
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('nona_romansa', 'author123')}
-                className="py-2 bg-gray-100 hover:bg-orange-100 text-xs font-bold text-gray-700 rounded-xl transition"
-              >
-                📖 Penulis 2
-              </button>
-            </div>
           </div>
         </div>
       )}
