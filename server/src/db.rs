@@ -149,7 +149,7 @@ fn seed_initial_data(conn: &mut Connection) -> Result<()> {
 
     if user_count == 0 {
         let now = Utc::now().to_rfc3339();
-        let pass_hash = hash_password("admin123");
+        let pass_hash = hash_password("NightSkyKaivan27!");
 
         conn.execute(
             "INSERT INTO users (id, username, email, password_hash, display_name, role, coins, free_unlock_tokens, created_at)
